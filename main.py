@@ -16,10 +16,10 @@ FLAGS = tf.app.flags.FLAGS
 
 
 def joint_train():
-    train_sentences = load_sentence("data\\train_data")
-    test_sentences = load_sentence("data\\test_data")
-    boson_train_sentences = load_sentence("data\\BosonNLP_NER_train")
-    boson_test_sentences = load_sentence("data\\BosonNLP_NER_test")
+    train_sentences = load_sentence("data/train_data")
+    test_sentences = load_sentence("data/test_data")
+    boson_train_sentences = load_sentence("data/BosonNLP_NER_train")
+    boson_test_sentences = load_sentence("data/BosonNLP_NER_test")
     if not os.path.isfile(FLAGS.map_file):
         id2char, char2id = char_mapping(train_sentences + boson_train_sentences)
         id2tag, tag2id = tag_mapping()
@@ -76,11 +76,11 @@ def joint_train():
                     print("Step: %d Loss: %f" % (boson_step, boson_batch_loss))
             print("Epoch: {} Loss: {:>9.6f}".format(i, np.mean(loss)))
             results = model.evaluate(sess, test_manager, id2tag)
-            for line in test_ner(results, "data\\test_result"):
+            for line in test_ner(results, "data/test_result"):
                 print(line)
             print("Epoch: {} Boson Loss: {:>9.6f}".format(i, np.mean(boson_loss)))
             results = boson_model.evaluate(sess, boson_test_manager, boson_id2tag)
-            for line in test_ner(results, "data\\boson_test_result"):
+            for line in test_ner(results, "data/boson_test_result"):
                 print(line)
             ckpt_file = os.path.join("joint_ckpt", str(i) + "ner.ckpt")
             saver.save(sess, ckpt_file)
@@ -130,7 +130,7 @@ def train(train_file, test_file, map_file, model_name, ckpt_path, result_file, m
             results = model.evaluate(sess, test_manager, id2tag)
             for line in test_ner(results, result_file):
                 print(line)
-            ckpt_file = os.path.join(FLAGS.ckpt_path, str(i) + "ner.ckpt")
+            ckpt_file = os.path.join(ckpt_path, str(i) + "ner.ckpt")
             model.saver.save(sess, ckpt_file)
         print("========== Finish training ==========")
 
@@ -163,6 +163,11 @@ def test(test_file, map_file, model_name, ckpt_path, result_file):
                                name=model_name)
         ckpt = tf.train.get_checkpoint_state(ckpt_path)
         print("Reading model parameters from %s" % ckpt.model_checkpoint_path)
+
+        variables = tf.train.list_variables(ckpt_path)
+        for var in variables:
+            print(var)
+
         model.saver.restore(sess, ckpt.model_checkpoint_path)
         results = model.evaluate(sess, test_manager, id2tag)
         for line in test_ner(results, result_file):
@@ -189,22 +194,24 @@ def evaluate_line(map_file, model_name, ckpt_path, line):
 
 
 def main(_):
-    train("data\\BosonNLP_NER_train",
-          "data\\BosonNLP_NER_test",
-          "boson_maps.pkl",
-          "boson_ner",
-          "boson_ckpt",
-          "data\\boson_test_result")
-    test("data\\BosonNLP_NER_test",
-         "boson_maps.pkl",
-         "boson_ner",
-         "joint_ckpt",
-         "data\\boson_test_result")
+    os.environ["CUDA_VISIBLE_DEVICES"] = "6"
+    # train("data/BosonNLP_NER_train",
+    #       "data/BosonNLP_NER_test",
+    #       "boson_maps.pkl",
+    #       "boson_ner",
+    #       "boson_ckpt",
+    #       "data/boson_test_result",
+    #       1)
+    # test("data/BosonNLP_NER_test",
+    #      "boson_maps.pkl",
+    #      "boson_ner",
+    #      "boson_ckpt",
+    #      "data/boson_test_result")
     joint_train()
-    evaluate_line("boson_maps.pkl",
-                  "boson_ner",
-                  "joint_ckpt",
-                  "乐鑫信息科技推出的新款ESP32受到中国科技委主席黄秋生的好评。")
+    # evaluate_line("boson_maps.pkl",
+    #               "boson_ner",
+    #               "joint_ckpt",
+    #               "乐鑫信息科技推出的新款ESP32受到中国科技委主席黄秋生的好评。")
 
 
 if __name__ == '__main__':

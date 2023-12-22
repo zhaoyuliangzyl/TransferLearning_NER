@@ -41,6 +41,7 @@ def load_wordvec(wordvec_path, id_to_word, vec_dim, old_embeddings):
 
 
 def load_sentence(path):
+    # 从给定的文件中加载句子数据，每行包含一个词和对应的标签，以列表的形式返回所有句子。
     sentences = []
     sentence = []
     for line in codecs.open(path, 'r', 'utf-8'):
